@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, time
 st.set_page_config("ORAICAN Project Tracker", layout="wide")
 
 # Database connection
-DB = "/workspaces/tf218/Streamlit/oraican.db"
+DB = "./Streamlit/oraican.db"
 
 def init_db():
     conn = sqlite3.connect(DB)
