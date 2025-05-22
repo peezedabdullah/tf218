@@ -2,20 +2,21 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime, timedelta, time
+import os
 
 st.set_page_config("ORAICAN Project Tracker", layout="wide")
 
-import os
+# Database setup
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "oraican.db")
 
-conn = sqlite3.connect(DB_PATH)
-# Database connection
-# DB = "./Streamlit/oraican.db"
+def get_connection():
+    return sqlite3.connect(DB_PATH)
 
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_connection()
     cursor = conn.cursor()
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS tasks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,7 +33,8 @@ def init_db():
         Topic TEXT,
         Date TEXT,
         Time TEXT,
-        Created TEXT
+        Created TEXT,
+        Link TEXT
     )
     """)
     conn.commit()
@@ -42,7 +44,7 @@ init_db()
 
 # Helper functions
 def add_task(title, desc, status, due):
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO tasks (Title, Description, Status, DueDate, Created)
@@ -52,7 +54,7 @@ def add_task(title, desc, status, due):
     conn.close()
 
 def get_tasks(start_date, end_date):
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_connection()
     df = pd.read_sql_query("""
         SELECT * FROM tasks
         WHERE DueDate BETWEEN ? AND ?
@@ -61,18 +63,18 @@ def get_tasks(start_date, end_date):
     conn.close()
     return df
 
-def add_meeting(topic, date, time_val):
-    conn = sqlite3.connect(DB_PATH)
+def add_meeting(topic, date, time_val, link):
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
-        INSERT INTO meetings (Topic, Date, Time, Created)
-        VALUES (?, ?, ?, ?)
-    """, (topic, date, time_val, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        INSERT INTO meetings (Topic, Date, Time, Created, Link)
+        VALUES (?, ?, ?, ?, ?)
+    """, (topic, date, time_val, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), link))
     conn.commit()
     conn.close()
 
 def get_meetings(start_date, end_date):
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_connection()
     df = pd.read_sql_query("""
         SELECT * FROM meetings
         WHERE Date BETWEEN ? AND ?
@@ -86,7 +88,7 @@ st.title("📊 ORAICAN Project Tracker")
 
 tab1, tab2 = st.tabs(["📝 Tasks", "📅 Schedule"])
 
-# WEEK RANGE CONTROL
+# Week range logic
 if "week_offset" not in st.session_state:
     st.session_state.week_offset = 0
 
@@ -112,8 +114,7 @@ with st.expander("📅 Or choose a custom date range"):
     start_date = st.date_input("Start", start_date)
     end_date = st.date_input("End", end_date)
 
-# ---------------------------
-# TASKS TAB
+# --- TASKS TAB ---
 with tab1:
     st.subheader("Task Management")
 
@@ -135,8 +136,7 @@ with tab1:
     else:
         st.info("No tasks in this range.")
 
-# ---------------------------
-# MEETINGS TAB
+# --- MEETINGS TAB ---
 with tab2:
     st.subheader("Meeting Scheduler")
 
@@ -144,8 +144,9 @@ with tab2:
         topic = st.text_input("Meeting Topic")
         date = st.date_input("Meeting Date")
         time_val = st.time_input("Meeting Time", value=time(10, 0))
+        link = st.text_input("Meeting Link (optional)")
         if st.button("Add Meeting"):
-            add_meeting(topic, date.strftime("%Y-%m-%d"), time_val.strftime("%H:%M"))
+            add_meeting(topic, date.strftime("%Y-%m-%d"), time_val.strftime("%H:%M"), link)
             st.success("📅 Meeting scheduled.")
 
     st.subheader("📆 Meetings This Week")
