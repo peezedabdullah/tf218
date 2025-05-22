@@ -5,11 +5,16 @@ from datetime import datetime, timedelta, time
 
 st.set_page_config("ORAICAN Project Tracker", layout="wide")
 
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "oraican.db")
+
+conn = sqlite3.connect(DB_PATH)
 # Database connection
-DB = "./Streamlit/oraican.db"
+# DB = "./Streamlit/oraican.db"
 
 def init_db():
-    conn = sqlite3.connect(DB)
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS tasks (
@@ -37,7 +42,7 @@ init_db()
 
 # Helper functions
 def add_task(title, desc, status, due):
-    conn = sqlite3.connect(DB)
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO tasks (Title, Description, Status, DueDate, Created)
@@ -47,7 +52,7 @@ def add_task(title, desc, status, due):
     conn.close()
 
 def get_tasks(start_date, end_date):
-    conn = sqlite3.connect(DB)
+    conn = sqlite3.connect(DB_PATH)
     df = pd.read_sql_query("""
         SELECT * FROM tasks
         WHERE DueDate BETWEEN ? AND ?
@@ -57,7 +62,7 @@ def get_tasks(start_date, end_date):
     return df
 
 def add_meeting(topic, date, time_val):
-    conn = sqlite3.connect(DB)
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO meetings (Topic, Date, Time, Created)
@@ -67,7 +72,7 @@ def add_meeting(topic, date, time_val):
     conn.close()
 
 def get_meetings(start_date, end_date):
-    conn = sqlite3.connect(DB)
+    conn = sqlite3.connect(DB_PATH)
     df = pd.read_sql_query("""
         SELECT * FROM meetings
         WHERE Date BETWEEN ? AND ?
